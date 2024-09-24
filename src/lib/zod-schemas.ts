@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const NewTransactionSchema = z.object({
+export const CreateTransactionSchema = z.object({
   type: z.enum(["expense", "income"]),
   title: z
     .string()
@@ -18,7 +18,7 @@ export const NewTransactionSchema = z.object({
     .max(15_000_000, {
       message: "Amount cannot be more than 15.000.000",
     }),
-  currency: z.enum(["UYU", "USD"]),
+  currency: z.enum(["UYU", "ARG", "USD"]),
   date: z.date({
     message: "Date is invalid",
   }),

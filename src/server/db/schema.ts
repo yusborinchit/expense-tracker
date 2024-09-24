@@ -1,10 +1,10 @@
 import { relations, sql } from "drizzle-orm";
 import {
+  date,
   index,
   integer,
   pgTableCreator,
   primaryKey,
-  serial,
   text,
   timestamp,
   varchar,
@@ -12,27 +12,6 @@ import {
 import { type AdapterAccount } from "next-auth/adapters";
 
 export const createTable = pgTableCreator((name) => `expense-tracker_${name}`);
-
-export const posts = createTable(
-  "post",
-  {
-    id: serial("id").primaryKey(),
-    name: varchar("name", { length: 256 }),
-    createdById: varchar("created_by", { length: 255 })
-      .notNull()
-      .references(() => users.id),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
-      () => new Date(),
-    ),
-  },
-  (example) => ({
-    createdByIdIdx: index("created_by_idx").on(example.createdById),
-    nameIndex: index("name_idx").on(example.name),
-  }),
-);
 
 export const users = createTable("user", {
   id: varchar("id", { length: 255 })
@@ -122,3 +101,23 @@ export const verificationTokens = createTable(
     compoundKey: primaryKey({ columns: [vt.identifier, vt.token] }),
   }),
 );
+
+export const transactions = createTable("transaction", {
+  id: varchar("id", { length: 255 })
+    .notNull()
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: varchar("user_id", { length: 255 })
+    .notNull()
+    .references(() => users.id),
+  type: varchar("type", { length: 255 })
+    .$type<"expense" | "income">()
+    .notNull(),
+  title: varchar("title", { length: 255 }).notNull().unique(),
+  amount: integer("amount").notNull(),
+  currency: varchar("currency", { length: 255 })
+    .$type<"UYU" | "ARG" | "USD">()
+    .notNull(),
+  date: date("date", { mode: "date" }).notNull(),
+  description: varchar("description", { length: 255 }),
+});

@@ -1,10 +1,14 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { format } from "date-fns";
+import { CalendarIcon, MoveDown, MoveUp } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { type z } from "zod";
-import { NewTransactionSchema } from "~/lib/zod-schemas";
+import { cn } from "~/lib/utils";
+import { CreateTransactionSchema } from "~/lib/zod-schemas";
 import { Button } from "../ui/button";
+import { Calendar } from "../ui/calendar";
 import {
   Card,
   CardContent,
@@ -21,6 +25,7 @@ import {
   FormMessage,
 } from "../ui/form";
 import { Input } from "../ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import {
   Select,
   SelectContent,
@@ -30,20 +35,20 @@ import {
 } from "../ui/select";
 import { Textarea } from "../ui/textarea";
 
-export default function NewTransactionForm() {
-  const form = useForm<z.infer<typeof NewTransactionSchema>>({
-    resolver: zodResolver(NewTransactionSchema),
+export default function CreateTransactionForm() {
+  const form = useForm<z.infer<typeof CreateTransactionSchema>>({
+    resolver: zodResolver(CreateTransactionSchema),
     defaultValues: {
       type: "expense",
       title: "",
       amount: 0,
       currency: "UYU",
-      date: new Date(),
+      date: undefined,
       description: "",
     },
   });
 
-  function onSubmit(values: z.infer<typeof NewTransactionSchema>) {
+  function onSubmit(values: z.infer<typeof CreateTransactionSchema>) {
     console.log(values);
   }
 
@@ -51,7 +56,9 @@ export default function NewTransactionForm() {
     <section className="mt-12">
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl font-bold">New Transaction</CardTitle>
+          <CardTitle className="text-3xl font-bold tracking-tight">
+            New Transaction
+          </CardTitle>
           <CardDescription>
             Track your expenses and incomes here
           </CardDescription>
@@ -63,22 +70,29 @@ export default function NewTransactionForm() {
                 control={form.control}
                 name="type"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="flex-1">
                     <FormLabel>Type:</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select transaction type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="expense">Expense</SelectItem>
-                        <SelectItem value="income">Income</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="flex items-center gap-2">
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select transaction type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="expense">Expense</SelectItem>
+                          <SelectItem value="income">Income</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {form.watch("type") === "expense" ? (
+                        <MoveDown className="size-6 text-red-600" />
+                      ) : (
+                        <MoveUp className="size-6 text-green-600" />
+                      )}
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -107,7 +121,7 @@ export default function NewTransactionForm() {
                         <Input
                           type="number"
                           {...field}
-                          onChange={e => field.onChange(Number(e.target.value))}
+                          onChange={(e) => field.onChange(+e.target.value)}
                         />
                       </FormControl>
                       <FormMessage />
@@ -131,6 +145,7 @@ export default function NewTransactionForm() {
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="UYU">UYU</SelectItem>
+                          <SelectItem value="ARG">ARG</SelectItem>
                           <SelectItem value="USD">USD</SelectItem>
                         </SelectContent>
                       </Select>
@@ -139,6 +154,44 @@ export default function NewTransactionForm() {
                   )}
                 />
               </div>
+              <FormField
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel className="leading-[1.5]">Date:</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground",
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0" align="end">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="description"
